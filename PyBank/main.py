@@ -1,59 +1,34 @@
-import csv
 import os
+import pandas as pd
 
-file_to_load = os.path.join("Resources", "budget_data.csv")
-file_to_output = os.path.join("analysis", "budget_analysis.txt")
+dirname = os.path.dirname(__file__)
+path = os.path.join(dirname,'Resources','budget_data.csv')
 
-total_months = 0
-month_of_change = []
-monthly_changes = []
-greatest_increase = ["", 0]
-greatest_decrease = ["", 9999999999999999999]
-total_net = 0
+data_df = pd.read_csv(path)
+print(data_df.head())
 
+total_pl = 0
+total_months = len(data_df['Date'])
+greatest_change = data_df['Profit/Losses'].max()
+least_change = data_df['Profit/Losses'].min()
+total_net_change = data_df['Profit/Losses'].sum()
 
-with open(file_to_load) as financial_data:
-    reader = csv.reader(financial_data)
-    header = next(reader)
+for value in data_df['Profit/Losses']:
+    total_pl += value
 
-    first_row = next(reader)
-    total_months = total_months + 1
-    total_net = total_net + int(first_row[1])
-    prev_net = int(first_row[1])
-
-    for row in reader:
-        total_months = total_months + 1
-        total_net = total_net + int(row[1])
+average_change = total_pl/total_months
 
 
-        net_change = int(row[1]) - prev_net
-        prev_net = int(row[1])
-        monthly_changes = monthly_changes + [net_change]
-        month_of_change = month_of_change + [row[0]]
-
-
-        if net_change > greatest_increase[1]:
-            greatest_increase[0] = row[0]
-            greatest_increase[1] = net_change
-
-
-        if net_change < greatest_decrease[1]:
-            greatest_decrease[0] = row[0]
-            greatest_decrease[1] = net_change
-
-
-net_monthly_avg = sum(monthly_changes) / len(monthly_changes)
-
-analysis = (
+output = (
     f"\nFinancial Analysis\n"
     f"----------------------------\n"
     f"Total Months: {total_months}\n"
-    f"Total: ${total_net}\n"
-    f"Average  Change: ${net_monthly_avg:.2f}\n"
-    f"Greatest Increase in Profits: {greatest_increase[0]} (${greatest_increase[1]})\n"
-    f"Greatest Decrease in Profits: {greatest_decrease[0]} (${greatest_decrease[1]})\n")
+    f"Total: ${total_net_change}\n"
+    f"Average  Change: ${average_change:.2f}\n"
+    f"Greatest Increase in Profits: {greatest_change} (${greatest_change})\n"
+    f"Greatest Decrease in Profits: {least_change} (${least_change})\n")
 
-print(analysis)
+print(output)
 
-with open(file_to_output, "w") as txt_file:
-    txt_file.write(analysis)
+with open(dirname + '/output.txt', 'w') as file:
+    file.write(output)

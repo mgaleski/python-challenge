@@ -1,55 +1,65 @@
-import csv
 import os
+import pandas as pd
 
-file_to_load = os.path.join("Resources", "election_data.csv")
-file_to_output = os.path.join("analysis", "election_analysis.txt")
+directory = os.path.dirname(__file__)
+path = os.path.join(directory, 'election_data.csv')
 
-total_votes = 0
+data_df = pd.read_csv(path)
+print(data_df.head())
 
-candidate_options = []
-candidate_votes = {}
 
-winning_candidate = ""
+total_votes = len(data_df['Voter ID'])
+candidates = []
+vote_counts = []
+percentage = []
+winner = []
 winning_count = 0
 
-with open(file_to_load) as election_data:
-    reader = csv.reader(election_data)
-    header = next(reader)
-    for row in reader:
-        print(". ", end=""),
-        total_votes = total_votes + 1
-        candidate_name = row[2]
+for value in data_df['Candidate']:
+    if value not in candidates:
+        candidates.append(value)
 
-        if candidate_name not in candidate_options:
-            candidate_options.append(candidate_name)
-            candidate_votes[candidate_name] = 0
+for name in candidates:
+    candidate_df = data_df.loc[data_df['Candidate'] == name]
+    vote_count = len(candidate_df['Voter ID'])
+    vote_counts.append(vote_count)
 
-        candidate_votes[candidate_name] = candidate_votes[candidate_name] + 1
+for value in vote_counts:
+    share = value/total_votes*100
+    percentage.append(share)
 
-with open(file_to_output, "w") as txt_file:
-    election_results = (
+final_df = {'Candidate': candidates,
+            'Vote count': vote_counts,
+            'Percentage': percentage}
+
+final_df = pd.DataFrame(final_df)
+
+with open(directory + '/results.txt', 'w') as file:
+    results = (
         f"\n\nElection Results\n"
         f"-------------------------\n"
         f"Total Votes: {total_votes}\n"
-        f"-------------------------\n")
-    print(election_results, end="")
-    txt_file.write(election_results)
-
-    for candidate in candidate_votes:
-        votes = candidate_votes.get(candidate)
-        vote_percentage = float(votes) / float(total_votes) * 100
-        if (votes > winning_count):
-            winning_count = votes
-            winning_candidate = candidate
-
-        voter_output = f"{candidate}: {vote_percentage:.3f}% ({votes})\n"
-        print(voter_output, end="")
-        txt_file.write(voter_output)
-
-    winning_candidate_summary = (
         f"-------------------------\n"
-        f"Winner: {winning_candidate}\n"
-        f"-------------------------\n")
-    print(winning_candidate_summary)
+        f"")
+    file.write(results)
+    print(results)
 
-    txt_file.write(winning_candidate_summary)
+    for i in range(0, len(final_df['Candidate'])):
+        name = final_df['Candidate'][i]
+        vote_percentage = final_df['Percentage'][i]
+        votes = final_df['Vote count'][i]
+        output = f"{name}: {vote_percentage:.3f}% ({votes})\n"
+        file.write(output)
+        print(output)
+
+        if votes > winning_count:
+            winning_count = votes
+            winner = name
+            winner_output = (
+                f"-------------------------\n"
+                f"Winner: {winner}\n"
+                f"-------------------------\n")
+
+    file.write(winner_output)
+    print(winner_output)
+
